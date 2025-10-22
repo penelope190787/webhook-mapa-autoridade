@@ -22,7 +22,42 @@ app.get('/webhook/test', (req, res) => {
 // Webhook da Cakto
 app.post('/webhook/cakto', (req, res) => {
     console.log('Webhook recebido:', req.body);
-    res.status(200).send('OK');
+    
+    try {
+        const webhookData = req.body;
+        
+        // Verificar se é uma compra aprovada
+        if (webhookData.event === 'purchase.approved' || webhookData.event === 'purchase.paid') {
+            
+            // Extrair dados do cliente
+            const customerData = {
+                nome: webhookData.customer?.name || 'Nome não informado',
+                email: webhookData.customer?.email || 'Email não informado',
+                telefone: webhookData.customer?.phone || 'Telefone não informado',
+                produto: webhookData.product?.name || 'Mapa da Autoridade Digital',
+                valor: webhookData.purchase?.amount || 'Valor não informado',
+                data: new Date().toLocaleString('pt-BR'),
+                status: 'Compra Aprovada'
+            };
+            
+            console.log('Dados do cliente processados:', customerData);
+            
+            // Aqui vamos adicionar o envio para Google Sheets
+            // Por enquanto só logamos os dados
+            
+        } else {
+            console.log('Evento recebido:', webhookData.event);
+        }
+        
+        res.status(200).json({ 
+            message: 'Webhook processado com sucesso',
+            event: webhookData.event 
+        });
+        
+    } catch (error) {
+        console.error('Erro ao processar webhook:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
