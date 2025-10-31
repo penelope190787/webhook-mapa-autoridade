@@ -8,7 +8,8 @@
     "dev": "node api/index.js"
   },
   "dependencies": {
-    "googleapis": "^128.0.0"
+    "google-spreadsheet": "^4.1.2",
+    "google-auth-library": "^9.4.1"
   },
   "engines": {
     "node": ">=18.0.0"
