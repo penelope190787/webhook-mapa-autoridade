@@ -3,6 +3,9 @@ const app = express();
 
 app.use(express.json());
 
+// Armazenar últimos webhooks (em memória)
+let ultimosWebhooks = [];
+
 // Rota principal
 app.get('/', (req, res) => {
     res.json({ 
@@ -19,9 +22,24 @@ app.get('/webhook/test', (req, res) => {
     });
 });
 
+// Rota para ver últimos webhooks recebidos
+app.get('/webhook/logs', (req, res) => {
+    res.json({
+        message: 'Últimos webhooks recebidos',
+        total: ultimosWebhooks.length,
+        webhooks: ultimosWebhooks.slice(-10) // Últimos 10
+    });
+});
+
 // Webhook da Cakto
 app.post('/webhook/cakto', (req, res) => {
     console.log('Webhook recebido:', req.body);
+    
+    // Salvar webhook na memória
+    ultimosWebhooks.push({
+        timestamp: new Date().toISOString(),
+        data: req.body
+    });
     
     try {
         const webhookData = req.body;
