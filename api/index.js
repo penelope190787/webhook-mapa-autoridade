@@ -55,16 +55,15 @@ export default async function handler(req, res) {
       // Pegar primeira aba
       const sheet = doc.sheetsByIndex[0];
 
-      // Preparar dados para inserir
+      // Preparar dados para inserir (CORRIGIDO para seus cabeçalhos)
       const novaLinha = {
-        'Data/Hora': new Date().toLocaleString('pt-BR'),
-        'Nome': dados.nome || '',
-        'Email': dados.email || '',
-        'Telefone': dados.telefone || '',
-        'Empresa': dados.empresa || '',
-        'Interesse': dados.interesse || '',
-        'Mensagem': dados.mensagem || '',
-        'Origem': dados.origem || 'Webhook'
+        'nome': dados.nome || '',
+        'email': dados.email || '',
+        'whatsapp': dados.telefone || dados.whatsapp || '',
+        'produto': dados.produto || dados.empresa || '',
+        'valor': dados.valor || '',
+        'data': new Date().toLocaleString('pt-BR'),
+        'status': 'Novo Lead'
       };
 
       // Inserir na planilha
