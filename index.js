@@ -44,16 +44,16 @@ app.post('/webhook/cakto', (req, res) => {
     try {
         const webhookData = req.body;
         
-        // Verificar se é uma compra aprovada
-        if (webhookData.event === 'purchase.approved' || webhookData.event === 'purchase.paid') {
+        // Verificar se é uma compra aprovada (ambos os formatos)
+        if (webhookData.event === 'purchase.approved' || webhookData.event === 'purchase_approved' || webhookData.event === 'purchase.paid') {
             
-            // Extrair dados do cliente
+            // Extrair dados do cliente (ajustado para estrutura da Cakto)
             const customerData = {
-                nome: webhookData.customer?.name || 'Nome não informado',
-                email: webhookData.customer?.email || 'Email não informado',
-                telefone: webhookData.customer?.phone || 'Telefone não informado',
-                produto: webhookData.product?.name || 'Mapa da Autoridade Digital',
-                valor: webhookData.purchase?.amount || 'Valor não informado',
+                nome: webhookData.data?.customer?.name || 'Nome não informado',
+                email: webhookData.data?.customer?.email || 'Email não informado',
+                telefone: webhookData.data?.customer?.phone || 'Telefone não informado',
+                produto: webhookData.data?.product?.name || 'Mapa da Autoridade Digital',
+                valor: webhookData.data?.amount || 'Valor não informado',
                 data: new Date().toLocaleString('pt-BR'),
                 status: 'Compra Aprovada'
             };
