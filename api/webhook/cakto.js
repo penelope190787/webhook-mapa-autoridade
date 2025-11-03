@@ -37,8 +37,14 @@ export default async function handler(req, res) {
       
       const dados = req.body || {};
       
-      // ACEITAR QUALQUER COISA POR ENQUANTO PARA DEBUG
-      console.log('DADOS RECEBIDOS DA CAKTO:', JSON.stringify(dados, null, 2));
+      // EXTRAIR DADOS NO FORMATO CAKTO
+      const customer = dados.data?.customer || {};
+      const product = dados.data?.product || {};
+      const offer = dados.data?.offer || {};
+      
+      console.log('CUSTOMER:', JSON.stringify(customer, null, 2));
+      console.log('PRODUCT:', JSON.stringify(product, null, 2));
+      console.log('OFFER:', JSON.stringify(offer, null, 2));
 
       // Configurar autenticação Google
       const serviceAccountAuth = new JWT({
@@ -54,15 +60,15 @@ export default async function handler(req, res) {
       // Pegar primeira aba
       const sheet = doc.sheetsByIndex[0];
 
-      // Preparar dados para inserir (aceitar vários formatos)
+      // Preparar dados para inserir (FORMATO CAKTO)
       const novaLinha = {
-        'nome': dados.nome || dados.name || dados.cliente || 'Nome não informado',
-        'email': dados.email || dados.e_mail || 'Email não informado',
-        'whatsapp': dados.telefone || dados.whatsapp || dados.phone || dados.celular || '',
-        'produto': dados.produto || dados.empresa || dados.servico || dados.interest || '',
-        'valor': dados.valor || dados.price || dados.preco || '',
+        'nome': customer.name || 'Nome não informado',
+        'email': customer.email || 'Email não informado',
+        'whatsapp': customer.phone || '',
+        'produto': product.name || offer.name || '',
+        'valor': dados.data?.amount || dados.data?.baseAmount || offer.price || '',
         'data': new Date().toLocaleString('pt-BR'),
-        'status': 'Novo Lead - Cakto'
+        'status': `Novo Lead - Cakto (${dados.event || 'evento'})`
       };
 
       // Inserir na planilha
@@ -71,15 +77,17 @@ export default async function handler(req, res) {
       // Armazenar para debug
       ultimosWebhooks.push({
         timestamp: new Date().toISOString(),
-        dados: dados,
+        evento: dados.event,
+        customer: customer,
+        product: product,
         dadosProcessados: novaLinha,
         status: 'sucesso'
       });
 
       return res.status(200).json({
         message: 'Lead Cakto salvo com sucesso!',
-        dados: novaLinha,
-        dadosOriginais: dados
+        evento: dados.event,
+        dados: novaLinha
       });
 
     } catch (error) {
@@ -102,4 +110,3 @@ export default async function handler(req, res) {
 
   return res.status(405).json({ error: 'Método não permitido' });
 }
-
