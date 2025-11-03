@@ -9,14 +9,22 @@ export default async function handler(req, res) {
 
   try {
     const dados = req.body;
-    console.log('Body recebido:', dados);
+    console.log('Body recebido:', JSON.stringify(dados, null, 2));
 
     // Verificar secret
     const secretRecebida = dados.secret;
     const secretEsperada = process.env.CAKTO_WEBHOOK_SECRET;
-    
+
     console.log('Secret recebida:', secretRecebida);
     console.log('Secret esperada:', secretEsperada);
+
+    if (!secretRecebida) {
+      console.log('❌ Secret não encontrada no payload');
+      return res.status(400).json({ 
+        error: 'Secret não encontrada',
+        dadosRecebidos: dados
+      });
+    }
 
     if (secretRecebida !== secretEsperada) {
       console.log('❌ Secret inválida');
