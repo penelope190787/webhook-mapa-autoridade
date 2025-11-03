@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     return res.status(200).json({
-      message: 'Webhook Cakto OK!',
+      message: 'Webhook Cakto funcionando!',
       ultimosWebhooks: ultimosWebhooks.slice(-3)
     });
   }
@@ -26,19 +26,24 @@ export default async function handler(req, res) {
       
       const dados = req.body || {};
       
-      // SEMPRE RESPONDER 200 PRIMEIRO
-      res.status(200).json({ message: 'Recebido com sucesso!' });
+      // VALIDAR CHAVE SECRETA DA CAKTO
+      const secretRecebida = dados.secret;
+      const secretEsperada = process.env.CAKTO_WEBHOOK_SECRET;
       
-      // DEPOIS PROCESSAR EM BACKGROUND
+      console.log('Secret recebida:', secretRecebida);
+      console.log('Secret esperada:', secretEsperada);
+      
+      if (!secretRecebida || secretRecebida !== secretEsperada) {
+        console.log('SECRET INVÁLIDA!');
+        return res.status(401).json({ error: 'Chave secreta inválida' });
+      }
+      
+      console.log('✅ SECRET VÁLIDA! Processando webhook...');
+      
       const customer = dados.data?.customer || {};
       const product = dados.data?.product || {};
       
-      if (!customer.name && !customer.email) {
-        console.log('Sem dados de customer, pulando...');
-        return;
-      }
-
-      // Salvar na planilha
+      // Salvar na planilha Google
       const serviceAccountAuth = new JWT({
         email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
         key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
@@ -54,7 +59,7 @@ export default async function handler(req, res) {
         'email': customer.email || 'N/A',
         'whatsapp': customer.phone || '',
         'produto': product.name || '',
-        'valor': dados.data?.amount || '',
+        'valor': dados.data?.amount || dados.data?.baseAmount || '',
         'data': new Date().toLocaleString('pt-BR'),
         'status': `Cakto - ${dados.event || 'webhook'}`
       };
@@ -63,18 +68,31 @@ export default async function handler(req, res) {
       
       ultimosWebhooks.push({
         timestamp: new Date().toISOString(),
+        evento: dados.event,
         dados: novaLinha,
-        status: 'OK'
+        status: 'SUCESSO'
       });
 
-      console.log('SALVO NA PLANILHA:', novaLinha);
+      console.log('✅ SALVO NA PLANILHA:', novaLinha);
+      
+      return res.status(200).json({ 
+        message: 'Webhook Cakto processado com sucesso!',
+        event: dados.event,
+        customer: customer.name
+      });
 
     } catch (error) {
-      console.error('ERRO:', error);
+      console.error('❌ ERRO:', error);
+      
       ultimosWebhooks.push({
         timestamp: new Date().toISOString(),
         erro: error.message,
         status: 'ERRO'
+      });
+      
+      return res.status(500).json({ 
+        error: 'Erro interno',
+        details: error.message 
       });
     }
   }
