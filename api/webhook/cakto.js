@@ -29,19 +29,16 @@ export default async function handler(req, res) {
       // LOG COMPLETO PARA DEBUG CAKTO
       console.log('=== DEBUG CAKTO ===');
       console.log('URL:', req.url);
-      console.log('Headers:', JSON.stringify(req.headers, null, 2));
-      console.log('Body:', JSON.stringify(req.body, null, 2));
+      console.log('Method:', req.method);
+      console.log('Headers completos:', JSON.stringify(req.headers, null, 2));
+      console.log('Body completo:', JSON.stringify(req.body, null, 2));
+      console.log('Query params:', JSON.stringify(req.query, null, 2));
       console.log('===================');
       
       const dados = req.body || {};
       
-      // Validar dados obrigatórios
-      if (!dados.nome || !dados.email) {
-        return res.status(400).json({ 
-          error: 'Nome e email são obrigatórios',
-          dadosRecebidos: dados
-        });
-      }
+      // ACEITAR QUALQUER COISA POR ENQUANTO PARA DEBUG
+      console.log('DADOS RECEBIDOS DA CAKTO:', JSON.stringify(dados, null, 2));
 
       // Configurar autenticação Google
       const serviceAccountAuth = new JWT({
@@ -57,13 +54,13 @@ export default async function handler(req, res) {
       // Pegar primeira aba
       const sheet = doc.sheetsByIndex[0];
 
-      // Preparar dados para inserir
+      // Preparar dados para inserir (aceitar vários formatos)
       const novaLinha = {
-        'nome': dados.nome || '',
-        'email': dados.email || '',
-        'whatsapp': dados.telefone || dados.whatsapp || '',
-        'produto': dados.produto || dados.empresa || '',
-        'valor': dados.valor || '',
+        'nome': dados.nome || dados.name || dados.cliente || 'Nome não informado',
+        'email': dados.email || dados.e_mail || 'Email não informado',
+        'whatsapp': dados.telefone || dados.whatsapp || dados.phone || dados.celular || '',
+        'produto': dados.produto || dados.empresa || dados.servico || dados.interest || '',
+        'valor': dados.valor || dados.price || dados.preco || '',
         'data': new Date().toLocaleString('pt-BR'),
         'status': 'Novo Lead - Cakto'
       };
@@ -75,12 +72,14 @@ export default async function handler(req, res) {
       ultimosWebhooks.push({
         timestamp: new Date().toISOString(),
         dados: dados,
+        dadosProcessados: novaLinha,
         status: 'sucesso'
       });
 
       return res.status(200).json({
         message: 'Lead Cakto salvo com sucesso!',
-        dados: novaLinha
+        dados: novaLinha,
+        dadosOriginais: dados
       });
 
     } catch (error) {
@@ -89,15 +88,18 @@ export default async function handler(req, res) {
       ultimosWebhooks.push({
         timestamp: new Date().toISOString(),
         erro: error.message,
+        dadosRecebidos: req.body,
         status: 'erro'
       });
 
       return res.status(500).json({
         error: 'Erro interno',
-        details: error.message
+        details: error.message,
+        dadosRecebidos: req.body
       });
     }
   }
 
   return res.status(405).json({ error: 'Método não permitido' });
 }
+
