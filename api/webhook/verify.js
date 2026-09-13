@@ -30,21 +30,29 @@ export default async function handler(req, res) {
     const sheet = doc.sheetsByIndex[0];
     const rows = await sheet.getRows();
 
-    const matches = rows.filter(row => {
-      const rowEmail = (row.get('email') || '').toString().trim().toLowerCase();
-      const rowStatus = (row.get('status') || '').toString().trim().toLowerCase();
-      return rowEmail === email && APPROVED_STATUSES.includes(rowStatus);
-    });
+    // Considera sempre o registro MAIS RECENTE daquele email, não apenas o
+    // último aprovado — assim um cancelamento/estorno posterior (gravado como
+    // status "cancelado") revoga corretamente um acesso aprovado antes,
+    // mesmo em assinaturas recorrentes.
+    const matches = rows.filter(row => (row.get('email') || '').toString().trim().toLowerCase() === email);
 
     if (matches.length === 0) {
       return res.status(200).json({ approved: false });
     }
 
     const last = matches[matches.length - 1];
+    const lastStatus = (last.get('status') || '').toString().trim().toLowerCase();
+
+    if (!APPROVED_STATUSES.includes(lastStatus)) {
+      return res.status(200).json({ approved: false });
+    }
+
+    const produto = last.get('produto') || '';
 
     return res.status(200).json({
       approved: true,
-      produto: last.get('produto') || '',
+      produto,
+      isUnlimited: /assinatura/i.test(produto),
       data: last.get('data') || ''
     });
 
