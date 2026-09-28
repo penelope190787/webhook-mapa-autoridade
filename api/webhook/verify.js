@@ -1,5 +1,6 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
+import { calcularLiberacao } from './dataCompra.js';
 
 const APPROVED_STATUSES = ['aprovado', 'approved', 'paid'];
 
@@ -49,11 +50,19 @@ export default async function handler(req, res) {
 
     const produto = last.get('produto') || '';
 
+    // Trava anti-fraude de reembolso: calcula no servidor se os 7 dias de
+    // garantia da Cakto já passaram para ESTA linha específica da planilha.
+    // O app usa `liberadoCompleto` para decidir se libera o Relatório Final
+    // e gerações acima do limite básico mesmo para quem tem `isUnlimited`.
+    const { liberadoCompleto, diasRestantes } = calcularLiberacao(last.get('data') || '');
+
     return res.status(200).json({
       approved: true,
       produto,
       isUnlimited: /assinatura/i.test(produto),
-      data: last.get('data') || ''
+      data: last.get('data') || '',
+      liberadoCompleto,
+      diasRestantes
     });
 
   } catch (error) {
