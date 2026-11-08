@@ -60,6 +60,14 @@ export default async function handler(req, res) {
       }
     }
 
+    // O formato simples de captura de lead não passa pela checagem do segredo acima, então
+    // ele nunca pode conceder acesso: qualquer pessoa que descobrisse a URL poderia enviar
+    // status "aprovado" e entrar sem pagar. Só eventos oficiais da Cakto (com segredo
+    // válido) gravam um status que libera o aplicativo.
+    if (!isCaktoEvent && ['aprovado', 'approved', 'paid'].includes(status.trim().toLowerCase())) {
+      status = 'novo';
+    }
+
     if (!email) {
       return res.status(400).json({ status: 'error', message: 'Email não informado no payload' });
     }
