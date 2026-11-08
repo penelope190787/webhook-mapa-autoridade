@@ -4,16 +4,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { limitesPara, lerContador, aplicarAcao, segredoConfere } from '../usoRegras.js';
 
-test('limites básicos: 3 gerações, 3 calendários e 30 roteiros', () => {
-  assert.deepEqual(limitesPara({ isUnlimited: false, liberadoCompleto: true }), { geracoes: 3, calendario: 3, roteiros: 30 });
+test('limites básicos: 10 gerações, 3 calendários e 30 roteiros', () => {
+  assert.deepEqual(limitesPara({ isUnlimited: false, liberadoCompleto: true }), { geracoes: 10, calendario: 3, roteiros: 30 });
 });
 
 test('assinante dentro da garantia continua no limite básico', () => {
-  assert.equal(limitesPara({ isUnlimited: true, liberadoCompleto: false }).geracoes, 3);
+  assert.equal(limitesPara({ isUnlimited: true, liberadoCompleto: false }).geracoes, 10);
 });
 
 test('assinante depois dos 7 dias ganha o limite maior', () => {
-  assert.equal(limitesPara({ isUnlimited: true, liberadoCompleto: true }).geracoes, 30);
+  assert.equal(limitesPara({ isUnlimited: true, liberadoCompleto: true }).geracoes, 50);
 });
 
 test('lerContador aceita vazio, texto e números', () => {

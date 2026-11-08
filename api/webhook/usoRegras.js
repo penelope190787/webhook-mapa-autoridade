@@ -12,8 +12,8 @@ import crypto from 'node:crypto';
 
 export const COLUNAS_USO = ['geracoes', 'calendario', 'roteiros'];
 
-const LIMITES_BASICO = { geracoes: 3, calendario: 3, roteiros: 30 };
-const LIMITES_ASSINANTE = { geracoes: 30, calendario: 30, roteiros: 300 };
+const LIMITES_BASICO = { geracoes: 10, calendario: 3, roteiros: 30 };
+const LIMITES_ASSINANTE = { geracoes: 50, calendario: 30, roteiros: 300 };
 
 // Assinante só ganha o limite maior depois de a garantia de 7 dias acabar, igual à regra
 // que o aplicativo já tinha para a geração ilimitada.
