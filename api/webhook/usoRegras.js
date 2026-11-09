@@ -6,19 +6,55 @@
 // O contador de cada pessoa fica na planilha de compras, na linha da compra mais recente
 // daquele e-mail, em três colunas que precisam existir na linha 1 da planilha:
 //   geracoes   = quantas gerações completas do posicionamento já foram usadas
-//   calendario = quantas vezes o calendário de 30 dias foi gerado (etapa 1 e etapa 2)
-//   roteiros   = quantos roteiros com legenda já foram gerados (um por dia do calendário)
+//   calendario = quantas vezes o calendário de 30 dias foi gerado (etapa 1 e etapa 2),
+//                somando todos os meses
+//   roteiros   = quantos roteiros com legenda já foram gerados (um por dia do calendário),
+//                somando todos os meses
 import crypto from 'node:crypto';
 
 export const COLUNAS_USO = ['geracoes', 'calendario', 'roteiros'];
 
-const LIMITES_BASICO = { geracoes: 10, calendario: 3, roteiros: 30 };
-const LIMITES_ASSINANTE = { geracoes: 50, calendario: 30, roteiros: 300 };
+// Calendário de 30 dias: um novo calendário libera a cada 30 dias a contar da data da compra,
+// até 12 no ano de acesso. Os que a pessoa não usar continuam disponíveis. Cada calendário
+// gasta 2 usos (etapa 1: dias 1 a 7; etapa 2: dias 8 a 30) e tem direito a 30 roteiros.
+export const CALENDARIOS_NO_ANO = 12;
+export const DIAS_POR_CALENDARIO = 30;
+const USOS_POR_CALENDARIO = 2;
+const ROTEIROS_POR_CALENDARIO = 30;
+
+const LIMITES_BASICO = { geracoes: 10 };
+const LIMITES_ASSINANTE = { geracoes: 50, calendario: CALENDARIOS_NO_ANO * USOS_POR_CALENDARIO, roteiros: CALENDARIOS_NO_ANO * ROTEIROS_POR_CALENDARIO };
+
+// Quantos calendários já podem ser gerados. Se a data da compra não puder ser lida
+// (diasDesdeCompra nulo), vale só o primeiro calendário.
+export function calendariosLiberados(diasDesdeCompra) {
+  if (!Number.isFinite(diasDesdeCompra) || diasDesdeCompra < 0) {
+    return 1;
+  }
+  return Math.min(CALENDARIOS_NO_ANO, Math.floor(diasDesdeCompra / DIAS_POR_CALENDARIO) + 1);
+}
+
+// Em quantos dias libera o próximo calendário (nulo quando os 12 já estão liberados).
+export function proximoCalendarioEmDias(diasDesdeCompra) {
+  const liberados = calendariosLiberados(diasDesdeCompra);
+  if (liberados >= CALENDARIOS_NO_ANO || !Number.isFinite(diasDesdeCompra)) {
+    return null;
+  }
+  return liberados * DIAS_POR_CALENDARIO - diasDesdeCompra;
+}
 
 // Assinante só ganha o limite maior depois de a garantia de 7 dias acabar, igual à regra
 // que o aplicativo já tinha para a geração ilimitada.
-export function limitesPara({ isUnlimited, liberadoCompleto }) {
-  return isUnlimited && liberadoCompleto ? { ...LIMITES_ASSINANTE } : { ...LIMITES_BASICO };
+export function limitesPara({ isUnlimited, liberadoCompleto, diasDesdeCompra }) {
+  if (isUnlimited && liberadoCompleto) {
+    return { ...LIMITES_ASSINANTE };
+  }
+  const liberados = calendariosLiberados(diasDesdeCompra);
+  return {
+    ...LIMITES_BASICO,
+    calendario: liberados * USOS_POR_CALENDARIO,
+    roteiros: liberados * ROTEIROS_POR_CALENDARIO
+  };
 }
 
 export function lerContador(valor) {

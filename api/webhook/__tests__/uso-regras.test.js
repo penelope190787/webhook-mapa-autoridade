@@ -2,18 +2,52 @@
 // dependências novas: `node --test api/webhook/__tests__/`
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { limitesPara, lerContador, aplicarAcao, segredoConfere } from '../usoRegras.js';
+import { limitesPara, calendariosLiberados, proximoCalendarioEmDias, lerContador, aplicarAcao, segredoConfere } from '../usoRegras.js';
 
-test('limites básicos: 10 gerações, 3 calendários e 30 roteiros', () => {
-  assert.deepEqual(limitesPara({ isUnlimited: false, liberadoCompleto: true }), { geracoes: 10, calendario: 3, roteiros: 30 });
+test('calendários liberados: 1 no começo e mais 1 a cada 30 dias, até 12', () => {
+  assert.equal(calendariosLiberados(0), 1);
+  assert.equal(calendariosLiberados(29), 1);
+  assert.equal(calendariosLiberados(30), 2);
+  assert.equal(calendariosLiberados(59), 2);
+  assert.equal(calendariosLiberados(60), 3);
+  assert.equal(calendariosLiberados(330), 12);
+  assert.equal(calendariosLiberados(365), 12);
+  assert.equal(calendariosLiberados(2000), 12);
+});
+
+test('data da compra ilegível libera só o primeiro calendário', () => {
+  assert.equal(calendariosLiberados(null), 1);
+  assert.equal(calendariosLiberados(undefined), 1);
+  assert.equal(calendariosLiberados(-3), 1);
+  assert.equal(proximoCalendarioEmDias(null), null);
+});
+
+test('próximo calendário: quantos dias faltam', () => {
+  assert.equal(proximoCalendarioEmDias(0), 30);
+  assert.equal(proximoCalendarioEmDias(10), 20);
+  assert.equal(proximoCalendarioEmDias(29), 1);
+  assert.equal(proximoCalendarioEmDias(30), 30);
+  assert.equal(proximoCalendarioEmDias(330), null);
+});
+
+test('limites básicos no primeiro mês: 10 gerações, 1 calendário (2 usos) e 30 roteiros', () => {
+  assert.deepEqual(limitesPara({ isUnlimited: false, liberadoCompleto: true, diasDesdeCompra: 10 }), { geracoes: 10, calendario: 2, roteiros: 30 });
+});
+
+test('limites básicos crescem 1 calendário e 30 roteiros a cada 30 dias', () => {
+  assert.deepEqual(limitesPara({ isUnlimited: false, liberadoCompleto: true, diasDesdeCompra: 35 }), { geracoes: 10, calendario: 4, roteiros: 60 });
+  assert.deepEqual(limitesPara({ isUnlimited: false, liberadoCompleto: true, diasDesdeCompra: 400 }), { geracoes: 10, calendario: 24, roteiros: 360 });
 });
 
 test('assinante dentro da garantia continua no limite básico', () => {
-  assert.equal(limitesPara({ isUnlimited: true, liberadoCompleto: false }).geracoes, 10);
+  assert.equal(limitesPara({ isUnlimited: true, liberadoCompleto: false, diasDesdeCompra: 3 }).geracoes, 10);
 });
 
 test('assinante depois dos 7 dias ganha o limite maior', () => {
-  assert.equal(limitesPara({ isUnlimited: true, liberadoCompleto: true }).geracoes, 50);
+  const limites = limitesPara({ isUnlimited: true, liberadoCompleto: true, diasDesdeCompra: 8 });
+  assert.equal(limites.geracoes, 50);
+  assert.equal(limites.calendario, 24);
+  assert.equal(limites.roteiros, 360);
 });
 
 test('lerContador aceita vazio, texto e números', () => {

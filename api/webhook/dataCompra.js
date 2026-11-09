@@ -65,12 +65,12 @@ export function calcularLiberacao(dataStr, agora = new Date()) {
 
   if (!dataCompra) {
     console.warn('⚠️ Não foi possível calcular a data de compra da linha (valor recebido: "' + dataStr + '"); liberando acesso completo por segurança.');
-    return { liberadoCompleto: true, diasRestantes: 0 };
+    return { liberadoCompleto: true, diasRestantes: 0, diasDesdeCompra: null };
   }
 
-  const diasDesdeCompra = Math.floor((agora - dataCompra) / 86400000);
+  const diasDesdeCompra = Math.max(0, Math.floor((agora - dataCompra) / 86400000));
   const liberadoCompleto = diasDesdeCompra >= DIAS_DE_GARANTIA;
   const diasRestantes = Math.max(0, DIAS_DE_GARANTIA - diasDesdeCompra);
 
-  return { liberadoCompleto, diasRestantes };
+  return { liberadoCompleto, diasRestantes, diasDesdeCompra };
 }

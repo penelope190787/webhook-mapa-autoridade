@@ -1,7 +1,7 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
 import { calcularLiberacao } from './dataCompra.js';
-import { COLUNAS_USO, limitesPara, lerContador, aplicarAcao, segredoConfere } from './usoRegras.js';
+import { COLUNAS_USO, CALENDARIOS_NO_ANO, calendariosLiberados, proximoCalendarioEmDias, limitesPara, lerContador, aplicarAcao, segredoConfere } from './usoRegras.js';
 
 // Contador de uso por e-mail, guardado na planilha de compras. Quem chama é o próprio
 // aplicativo (servidor para servidor), com um segredo compartilhado no cabeçalho
@@ -73,8 +73,10 @@ export default async function handler(req, res) {
 
     const produto = linha.get('produto') || '';
     const isUnlimited = /assinatura/i.test(produto);
-    const { liberadoCompleto, diasRestantes } = calcularLiberacao(linha.get('data') || '');
-    const limites = limitesPara({ isUnlimited, liberadoCompleto });
+    const { liberadoCompleto, diasRestantes, diasDesdeCompra } = calcularLiberacao(linha.get('data') || '');
+    const limites = limitesPara({ isUnlimited, liberadoCompleto, diasDesdeCompra });
+    const liberados = isUnlimited && liberadoCompleto ? CALENDARIOS_NO_ANO : calendariosLiberados(diasDesdeCompra);
+    const proximoEmDias = isUnlimited && liberadoCompleto ? null : proximoCalendarioEmDias(diasDesdeCompra);
 
     const usados = {};
     COLUNAS_USO.forEach(coluna => { usados[coluna] = lerContador(linha.get(coluna)); });
@@ -99,6 +101,9 @@ export default async function handler(req, res) {
       limites,
       liberadoCompleto,
       diasRestantes,
+      calendariosLiberados: liberados,
+      calendariosNoAno: CALENDARIOS_NO_ANO,
+      proximoCalendarioEmDias: proximoEmDias,
       isUnlimited
     });
   } catch (error) {
