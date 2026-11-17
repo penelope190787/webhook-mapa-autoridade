@@ -5,7 +5,8 @@
   "type": "module",
   "dependencies": {
     "google-spreadsheet": "^4.1.2",
-    "google-auth-library": "^9.4.1"
+    "google-auth-library": "^9.4.1",
+    "nodemailer": "^6.10.1"
   },
   "engines": {
     "node": ">=18.0.0"
